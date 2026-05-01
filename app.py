@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Request
 from fastapi.security import HTTPBasicCredentials, HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
@@ -135,7 +135,7 @@ def give_secret_message(user: dict = Depends(verify_token)):
 
 @app.post("/register")
 @limiter.limit("1/minute")
-def register(user: UserRegister, request=None):
+def register(request: Request, user: UserRegister):  
     if get_user_from_db(user.username):
         raise HTTPException(status_code=400, detail="User already exists")
     
@@ -156,8 +156,8 @@ def register(user: UserRegister, request=None):
 
 @app.post("/login", response_model=TokenResponse)
 @limiter.limit("5/minute")
-def login(request: LoginRequest):
-    user = authenticate_user(request.username, request.password)
+def login(request: Request, login_data: LoginRequest):  
+    user = authenticate_user(login_data.username, login_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -165,10 +165,10 @@ def login(request: LoginRequest):
         )
     
     role = "user"
-    if request.username == "admin":
+    if login_data.username == "admin":
         role = "admin"
     
-    access_token = create_access_token(data={"sub": request.username, "role": role})
+    access_token = create_access_token(data={"sub": login_data.username, "role": role})
     return TokenResponse(access_token=access_token)
 
 @app.get("/protected_resource")
