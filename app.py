@@ -137,7 +137,7 @@ def give_secret_message(user: dict = Depends(verify_token)):
 @limiter.limit("1/minute")
 def register(request: Request, user: UserRegister):  
     if get_user_from_db(user.username):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User already exists")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,  detail="User already exists")
     
     hashed_password = pwd_context.hash(user.password)
     
